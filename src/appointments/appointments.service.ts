@@ -14,11 +14,11 @@ export abstract class IAppointmentsService {
 
 @Injectable()
 export class AppointmentsService implements IAppointmentsService {
-  constructor(private db: DatabaseService) {}
+  constructor(private service: DatabaseService) {}
 
   async create(value: CreateAppointmentDto) {
     const date = startOfHour(new Date(value.date));
-    const hasSameDate = await this.db.appointments.findFirst({
+    const hasSameDate = await this.service.appointments.findFirst({
       where: { date },
     });
 
@@ -29,7 +29,7 @@ export class AppointmentsService implements IAppointmentsService {
       );
     }
 
-    const appointment = await this.db.appointments.create({
+    const appointment = await this.service.appointments.create({
       data: { provider: value.provider, date },
     });
 
@@ -37,13 +37,13 @@ export class AppointmentsService implements IAppointmentsService {
   }
 
   async findAll() {
-    const appointment = await this.db.appointments.findMany();
+    const appointment = await this.service.appointments.findMany();
 
     return appointment;
   }
 
   async findOne(id: string) {
-    const appointment = await this.db.appointments.findFirst({
+    const appointment = await this.service.appointments.findFirst({
       where: { id },
     });
 
@@ -51,7 +51,7 @@ export class AppointmentsService implements IAppointmentsService {
   }
 
   async update(id: string, value: UpdateAppointmentDto) {
-    const appointment = await this.db.appointments.update({
+    const appointment = await this.service.appointments.update({
       where: { id },
       data: { provider: value.provider, date: value.date },
     });
@@ -60,7 +60,7 @@ export class AppointmentsService implements IAppointmentsService {
   }
 
   async remove(id: string) {
-    const appointment = await this.db.appointments.delete({
+    const appointment = await this.service.appointments.delete({
       where: { id },
     });
 
