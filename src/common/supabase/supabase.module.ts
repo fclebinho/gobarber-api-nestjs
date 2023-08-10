@@ -17,6 +17,5 @@ import { APP_GUARD } from '@nestjs/core';
       useClass: SupabaseGuard,
     },
   ],
-  exports: [Supabase, SupabaseStrategy, SupabaseGuard],
 })
 export class SupabaseModule {}
