@@ -3,6 +3,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { DatabaseService } from 'src/common/database/database.service';
 import { startOfHour } from 'date-fns';
+import { Appointment } from '@prisma/client';
 
 export abstract class IAppointmentsService {
   abstract create(value: CreateAppointmentDto);
@@ -16,9 +17,9 @@ export abstract class IAppointmentsService {
 export class AppointmentsService implements IAppointmentsService {
   constructor(private service: DatabaseService) {}
 
-  async create(value: CreateAppointmentDto) {
+  async create(value: CreateAppointmentDto): Promise<Appointment> {
     const date = startOfHour(new Date(value.date));
-    const hasSameDate = await this.service.appointments.findFirst({
+    const hasSameDate = await this.service.appointment.findFirst({
       where: { date },
     });
 
@@ -29,29 +30,29 @@ export class AppointmentsService implements IAppointmentsService {
       );
     }
 
-    const appointment = await this.service.appointments.create({
+    const appointment = await this.service.appointment.create({
       data: { provider: value.provider, date },
     });
 
     return appointment;
   }
 
-  async findAll() {
-    const appointment = await this.service.appointments.findMany();
+  async findAll(): Promise<Appointment[]> {
+    const appointment = await this.service.appointment.findMany();
 
     return appointment;
   }
 
-  async findOne(id: string) {
-    const appointment = await this.service.appointments.findFirst({
+  async findOne(id: string): Promise<Appointment | null> {
+    const appointment = await this.service.appointment.findFirst({
       where: { id },
     });
 
     return appointment;
   }
 
-  async update(id: string, value: UpdateAppointmentDto) {
-    const appointment = await this.service.appointments.update({
+  async update(id: string, value: UpdateAppointmentDto): Promise<Appointment> {
+    const appointment = await this.service.appointment.update({
       where: { id },
       data: { provider: value.provider, date: value.date },
     });
@@ -59,8 +60,8 @@ export class AppointmentsService implements IAppointmentsService {
     return appointment;
   }
 
-  async remove(id: string) {
-    const appointment = await this.service.appointments.delete({
+  async remove(id: string): Promise<Appointment> {
+    const appointment = await this.service.appointment.delete({
       where: { id },
     });
 
