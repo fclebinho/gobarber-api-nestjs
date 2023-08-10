@@ -37,7 +37,7 @@ export class AppointmentService implements IAppointmentService {
   }
 
   async findAll() {
-    const appointment = await this.prisma.appointments.findMany({});
+    const appointment = await this.prisma.appointments.findMany();
 
     return appointment;
   }
