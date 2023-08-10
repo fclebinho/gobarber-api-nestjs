@@ -5,8 +5,19 @@ import { DatabaseService } from 'src/common/database/database.service';
 import { startOfHour } from 'date-fns';
 import { Appointment } from '@prisma/client';
 
+export abstract class IAppointmentsService {
+  abstract create(value: CreateAppointmentDto): Promise<Appointment>;
+  abstract findAll(): Promise<Appointment[]>;
+  abstract findOne(id: string): Promise<Appointment | null>;
+  abstract update(
+    id: string,
+    value: UpdateAppointmentDto,
+  ): Promise<Appointment>;
+  abstract remove(id: string): Promise<Appointment>;
+}
+
 @Injectable()
-export class AppointmentsService {
+export class AppointmentsService implements IAppointmentsService {
   constructor(private service: DatabaseService) {}
 
   async create(value: CreateAppointmentDto): Promise<Appointment> {

@@ -7,13 +7,13 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
+import { IAppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { AppointmentsService } from './appointments.service';
 
 @Controller('appointments')
 export class AppointmentsController {
-  constructor(private readonly service: AppointmentsService) {}
+  constructor(private readonly service: IAppointmentsService) {}
 
   @Post()
   create(@Body() value: CreateAppointmentDto) {
