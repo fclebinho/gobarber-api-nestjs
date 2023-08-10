@@ -14,4 +14,6 @@ model Appointments {
   id       String   @id @default(uuid()) @db.Uuid
   provider String   @db.Uuid
   date     DateTime @db.Timestamptz(3)
+
+  @@map("appointments")
 }
