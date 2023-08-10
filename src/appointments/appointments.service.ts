@@ -6,11 +6,14 @@ import { startOfHour } from 'date-fns';
 import { Appointment } from '@prisma/client';
 
 export abstract class IAppointmentsService {
-  abstract create(value: CreateAppointmentDto);
-  abstract findAll();
-  abstract findOne(id: string);
-  abstract update(id: string, value: UpdateAppointmentDto);
-  abstract remove(id: string);
+  abstract create(value: CreateAppointmentDto): Promise<Appointment>;
+  abstract findAll(): Promise<Appointment[]>;
+  abstract findOne(id: string): Promise<Appointment | null>;
+  abstract update(
+    id: string,
+    value: UpdateAppointmentDto,
+  ): Promise<Appointment>;
+  abstract remove(id: string): Promise<Appointment>;
 }
 
 @Injectable()
