@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateAppointmentDto } from '../dto/create-appointment.dto';
-import { PrismaService } from 'src/database/prisma.service';
-import { UpdateAppointmentDto } from 'src/dto/update-appointment.dto';
+import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { DatabaseService } from 'src/common/database/database.service';
 import { startOfHour } from 'date-fns';
 
-export abstract class IAppointmentService {
+export abstract class IAppointmentsService {
   abstract create(value: CreateAppointmentDto);
   abstract findAll();
   abstract findOne(id: string);
@@ -13,12 +13,12 @@ export abstract class IAppointmentService {
 }
 
 @Injectable()
-export class AppointmentService implements IAppointmentService {
-  constructor(private prisma: PrismaService) {}
+export class AppointmentsService implements IAppointmentsService {
+  constructor(private db: DatabaseService) {}
 
   async create(value: CreateAppointmentDto) {
     const date = startOfHour(new Date(value.date));
-    const hasSameDate = await this.prisma.appointments.findFirst({
+    const hasSameDate = await this.db.appointments.findFirst({
       where: { date },
     });
 
@@ -29,7 +29,7 @@ export class AppointmentService implements IAppointmentService {
       );
     }
 
-    const appointment = await this.prisma.appointments.create({
+    const appointment = await this.db.appointments.create({
       data: { provider: value.provider, date },
     });
 
@@ -37,13 +37,13 @@ export class AppointmentService implements IAppointmentService {
   }
 
   async findAll() {
-    const appointment = await this.prisma.appointments.findMany();
+    const appointment = await this.db.appointments.findMany();
 
     return appointment;
   }
 
   async findOne(id: string) {
-    const appointment = await this.prisma.appointments.findFirst({
+    const appointment = await this.db.appointments.findFirst({
       where: { id },
     });
 
@@ -51,7 +51,7 @@ export class AppointmentService implements IAppointmentService {
   }
 
   async update(id: string, value: UpdateAppointmentDto) {
-    const appointment = await this.prisma.appointments.update({
+    const appointment = await this.db.appointments.update({
       where: { id },
       data: { provider: value.provider, date: value.date },
     });
@@ -60,7 +60,7 @@ export class AppointmentService implements IAppointmentService {
   }
 
   async remove(id: string) {
-    const appointment = await this.prisma.appointments.delete({
+    const appointment = await this.db.appointments.delete({
       where: { id },
     });
 

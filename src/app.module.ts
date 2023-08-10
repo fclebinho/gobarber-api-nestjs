@@ -4,26 +4,21 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 
 import { SupabaseGuard, SupabaseModule } from './common/supabase';
-import { PrismaService } from './database/prisma.service';
-import {
-  AppointmentService,
-  IAppointmentService,
-} from './services/appointment.service';
-import { AppointmentController } from './controllers/appointment.controller';
+import { DatabaseModule } from './common/database/database.module';
+import { AppointmentsModule } from './appointments/appointments.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), PassportModule, SupabaseModule],
-  controllers: [AppointmentController],
+  imports: [
+    ConfigModule.forRoot(),
+    PassportModule,
+    SupabaseModule,
+    DatabaseModule,
+    AppointmentsModule,
+  ],
   providers: [
-    PrismaService,
-
     {
       provide: APP_GUARD,
       useClass: SupabaseGuard,
-    },
-    {
-      provide: IAppointmentService,
-      useClass: AppointmentService,
     },
   ],
 })
