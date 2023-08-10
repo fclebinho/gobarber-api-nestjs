@@ -1,14 +1,15 @@
-import { Controller, Get, Logger } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Post, Logger, Body } from '@nestjs/common';
+import { CreateMemberBody } from './dtos/create-member-body';
+import { MemberRepository } from './repositories/member-repository';
 
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name);
-  constructor(private readonly appService: AppService) {}
+  constructor(private repository: MemberRepository) {}
 
-  @Get()
-  getHello() {
-    this.logger.log('GET / called');
-    return this.appService.getHello();
+  @Post()
+  async getHello(@Body() body: CreateMemberBody) {
+    const { name } = body;
+    await this.repository.create(name);
   }
 }

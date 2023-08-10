@@ -4,17 +4,23 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { SupabaseGuard, SupabaseModule } from './common/supabase';
+import { PrismaService } from './database/prisma.service';
+import { MemberRepository } from './repositories/member-repository';
+import { MemberRepositoryPrisma } from './prisma/member-repository-prisma';
 
 @Module({
   imports: [ConfigModule.forRoot(), PassportModule, SupabaseModule],
   controllers: [AppController],
   providers: [
-    AppService,
+    PrismaService,
     {
       provide: APP_GUARD,
       useClass: SupabaseGuard,
+    },
+    {
+      provide: MemberRepository,
+      useClass: MemberRepositoryPrisma,
     },
   ],
 })
