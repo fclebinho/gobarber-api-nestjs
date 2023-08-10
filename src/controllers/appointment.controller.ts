@@ -11,7 +11,7 @@ import { IAppointmentService } from '../services/appointment.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { UpdateAppointmentDto } from 'src/dto/update-appointment.dto';
 
-@Controller('appointment')
+@Controller('appointments')
 export class AppointmentController {
   constructor(private readonly appointmentService: IAppointmentService) {}
 
