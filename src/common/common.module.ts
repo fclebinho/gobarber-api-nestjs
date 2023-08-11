@@ -4,5 +4,6 @@ import { SupabaseModule } from './supabase';
 
 @Module({
   imports: [DatabaseModule, SupabaseModule],
+  exports: [DatabaseModule, SupabaseModule],
 })
 export class CommonModule {}

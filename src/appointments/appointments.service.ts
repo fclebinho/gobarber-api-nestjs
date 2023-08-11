@@ -22,11 +22,23 @@ export class AppointmentsService implements IAppointmentsService {
 
   async create(value: CreateAppointmentDto): Promise<Appointment> {
     const date = startOfHour(new Date(value.date));
-    const hasSameDate = await this.service.appointment.findFirst({
+
+    const userExists = await this.service.user.findFirst({
+      where: { id: value.providerId },
+    });
+
+    if (!userExists) {
+      throw new HttpException(
+        'This provider not found',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const isAlready = await this.service.appointment.findFirst({
       where: { date },
     });
 
-    if (hasSameDate) {
+    if (isAlready) {
       throw new HttpException(
         'This appointment is already booked',
         HttpStatus.BAD_REQUEST,
@@ -34,16 +46,16 @@ export class AppointmentsService implements IAppointmentsService {
     }
 
     const appointment = await this.service.appointment.create({
-      data: { provider: value.provider, date },
+      data: { providerId: value.providerId, date },
     });
 
     return appointment;
   }
 
   async findAll(): Promise<Appointment[]> {
-    const appointment = await this.service.appointment.findMany();
+    const appointments = await this.service.appointment.findMany();
 
-    return appointment;
+    return appointments;
   }
 
   async findOne(id: string): Promise<Appointment | null> {
@@ -57,7 +69,7 @@ export class AppointmentsService implements IAppointmentsService {
   async update(id: string, value: UpdateAppointmentDto): Promise<Appointment> {
     const appointment = await this.service.appointment.update({
       where: { id },
-      data: { provider: value.provider, date: value.date },
+      data: { providerId: value.providerId, date: value.date },
     });
 
     return appointment;
