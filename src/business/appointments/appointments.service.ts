@@ -14,7 +14,7 @@ import { FindScheduleDto } from './dto/find-schedule.dto';
 import { DayAvailability } from './entities/day-avalilability';
 import { FindAvailabilityDto } from './dto/find-availability-dto';
 import { Appointment } from './entities/appointment';
-import { IUsersService } from 'src/users/users.service';
+import { IUsersService } from 'src/common/users/users.service';
 import {
   toEndHourDay,
   toFirstDayMonth,
@@ -22,6 +22,7 @@ import {
   toStartHourDay,
 } from 'src/utils';
 import { HourAvailability } from './entities/hour-avalilability';
+import { IProvidersService } from '../providers/providers.service';
 
 export abstract class IAppointmentsService {
   abstract create(value: CreateAppointmentDto): Promise<Appointment>;
@@ -43,6 +44,7 @@ export class AppointmentsService implements IAppointmentsService {
   constructor(
     private db: DatabaseService,
     private userService: IUsersService,
+    private providerService: IProvidersService,
   ) {
     this.db.$on('query', (e) => {
       console.log('Params: ' + e.params);
@@ -59,6 +61,13 @@ export class AppointmentsService implements IAppointmentsService {
   }: FindAvailabilityDto): Promise<HourAvailability[]> {
     const firstDay = toStartHourDay(year, month, day);
     const lastDay = toEndHourDay(year, month, day);
+
+    const provider = await this.providerService.findOne({ id: providerId });
+    console.log('findAvailability', provider);
+
+    if (!provider) {
+      throw new HttpException('Provider not found', HttpStatus.BAD_REQUEST);
+    }
 
     const appointaments = await this.db.appointment.findMany({
       where: {
@@ -97,6 +106,12 @@ export class AppointmentsService implements IAppointmentsService {
   }: FindScheduleDto): Promise<DayAvailability[]> {
     const firstDay = toFirstDayMonth(year, month);
     const lastDay = toLastDayMonth(year, month);
+
+    const provider = await this.providerService.findOne({ id: providerId });
+
+    if (!provider) {
+      throw new HttpException('Provider not found', HttpStatus.BAD_REQUEST);
+    }
 
     const appointaments = await this.db.appointment.findMany({
       where: { providerId, date: { gte: firstDay, lte: lastDay } },
@@ -160,9 +175,7 @@ export class AppointmentsService implements IAppointmentsService {
       );
     }
 
-    const provider = await this.db.user.findFirst({
-      where: { id: providerId, role: 'PROVIDER' },
-    });
+    const provider = await this.providerService.findOne({ id: providerId });
 
     if (!provider) {
       throw new HttpException('Provider not found', HttpStatus.BAD_REQUEST);

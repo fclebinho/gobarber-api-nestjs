@@ -4,7 +4,7 @@ import {
   SignInWithPasswordCredentials,
   SignUpWithPasswordCredentials,
 } from '@supabase/supabase-js';
-import { IUsersService } from 'src/users/users.service';
+import { IUsersService } from 'src/common/users/users.service';
 
 @Injectable()
 export class AuthService {

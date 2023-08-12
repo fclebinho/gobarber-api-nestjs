@@ -13,15 +13,12 @@ import { IAppointmentsService } from './appointments.service';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { FindScheduleDto } from './dto/find-schedule.dto';
 import { FindAvailabilityDto } from './dto/find-availability-dto';
-import { Supabase, SupabaseGuard } from 'src/common/supabase';
+import { SupabaseGuard } from 'src/common/supabase';
 import { CreateAppointmentInput } from './inputs/create-appointment.input';
 
 @Controller('appointments')
 export class AppointmentsController {
-  constructor(
-    private readonly service: IAppointmentsService,
-    private supabase: Supabase,
-  ) {}
+  constructor(private readonly service: IAppointmentsService) {}
 
   @UseGuards(SupabaseGuard)
   @Post()
