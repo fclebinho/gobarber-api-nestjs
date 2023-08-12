@@ -31,15 +31,20 @@ export class Supabase {
       this.configService.get('SUPABASE_KEY'),
       {
         auth: {
+          persistSession: false,
           autoRefreshToken: true,
           detectSessionInUrl: false,
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${ExtractJwt.fromAuthHeaderAsBearerToken()(
+              this.request,
+            )}`,
+          },
         },
       },
     );
 
-    this.clientInstance.auth.setSession(
-      ExtractJwt.fromAuthHeaderAsBearerToken()(this.request),
-    );
     this.logger.log('auth has been set!');
 
     return this.clientInstance;

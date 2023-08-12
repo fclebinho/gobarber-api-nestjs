@@ -1,11 +1,5 @@
-import { IsDateString, IsNotEmpty, IsUUID } from 'class-validator';
-
 export class CreateAppointmentDto {
-  @IsNotEmpty()
-  @IsUUID()
+  userSub: string;
   providerId: string;
-
-  @IsNotEmpty()
-  @IsDateString()
   date: Date;
 }
