@@ -1,4 +1,4 @@
 export type DayAvailability = {
-  hour: number;
+  day: number;
   available: boolean;
 };

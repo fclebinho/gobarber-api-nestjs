@@ -2,18 +2,34 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { DatabaseService } from 'src/common/database/database.service';
-import { startOfHour } from 'date-fns';
+import {
+  getDate,
+  getDaysInMonth,
+  getHours,
+  isAfter,
+  isBefore,
+  startOfHour,
+} from 'date-fns';
 import { FindScheduleDto } from './dto/find-schedule.dto';
 import { DayAvailability } from './entities/day-avalilability';
 import { FindAvailabilityDto } from './dto/find-availability-dto';
 import { Appointment } from './entities/appointment';
 import { IUsersService } from 'src/users/users.service';
+import {
+  toEndHourDay,
+  toFirstDayMonth,
+  toLastDayMonth,
+  toStartHourDay,
+} from 'src/utils';
+import { HourAvailability } from './entities/hour-avalilability';
 
 export abstract class IAppointmentsService {
   abstract create(value: CreateAppointmentDto): Promise<Appointment>;
   abstract findAll(): Promise<Appointment[]>;
-  abstract findSchedule(value: FindScheduleDto): Promise<Appointment[]>;
-  abstract findAvailability(value: FindScheduleDto): Promise<DayAvailability[]>;
+  abstract findSchedule(value: FindScheduleDto): Promise<DayAvailability[]>;
+  abstract findAvailability(
+    value: FindScheduleDto,
+  ): Promise<HourAvailability[]>;
   abstract findOne(id: string): Promise<Appointment | null>;
   abstract update(
     id: string,
@@ -28,44 +44,86 @@ export class AppointmentsService implements IAppointmentsService {
     private db: DatabaseService,
     private userService: IUsersService,
   ) {
-    // this.db.$on('query', (e) => {
-    //   console.log('Params: ' + e.params);
-    //   console.log('Query: ' + e.query);
-    //   console.log('Duration: ' + e.duration + 'ms');
-    // });
+    this.db.$on('query', (e) => {
+      console.log('Params: ' + e.params);
+      console.log('Query: ' + e.query);
+      console.log('Duration: ' + e.duration + 'ms');
+    });
   }
 
   async findAvailability({
+    providerId,
     year,
     month,
     day,
-    providerId,
-  }: FindAvailabilityDto): Promise<DayAvailability[]> {
-    const firstDay = new Date(year, month - 1, day, 0);
-    const lastDay = new Date(year, month, day, 0);
+  }: FindAvailabilityDto): Promise<HourAvailability[]> {
+    const firstDay = toStartHourDay(year, month, day);
+    const lastDay = toEndHourDay(year, month, day);
 
     const appointaments = await this.db.appointment.findMany({
-      where: { providerId, date: { gte: firstDay, lte: lastDay } },
+      where: {
+        providerId: providerId,
+        date: { gte: firstDay, lte: lastDay },
+      },
     });
 
-    return appointaments.map(() => ({ hour: 3, available: false }));
+    const hourStart = 8;
+    const eachHourArray = Array.from(
+      { length: 10 },
+      (_, index) => index + hourStart,
+    );
+
+    const availability = eachHourArray.map((hour) => {
+      const available = !appointaments.find(
+        ({ date }) => getHours(date) === hour,
+      );
+
+      const currentDate = new Date(Date.now());
+      const compareDate = new Date(year, month - 1, day, hour);
+
+      return {
+        hour,
+        available: available && isAfter(compareDate, currentDate),
+      };
+    });
+
+    return availability;
   }
 
   async findSchedule({
     year,
     month,
     providerId,
-  }: FindScheduleDto): Promise<Appointment[]> {
-    const firstDay = new Date(year, month - 1, 1, 0);
-    const lastDay = new Date(year, month, 0, 0);
+  }: FindScheduleDto): Promise<DayAvailability[]> {
+    const firstDay = toFirstDayMonth(year, month);
+    const lastDay = toLastDayMonth(year, month);
 
     const appointaments = await this.db.appointment.findMany({
       where: { providerId, date: { gte: firstDay, lte: lastDay } },
     });
 
-    appointaments.map((item) => console.log(item));
+    const daysInMonth = getDaysInMonth(new Date(year, month - 1));
+    const eachDayMonth = Array.from(
+      { length: daysInMonth },
+      (value, index) => index + 1,
+    );
 
-    return appointaments;
+    const availability = eachDayMonth.map((day) => {
+      const appointamentsInDay = appointaments.filter(
+        ({ date }) => getDate(date) === day,
+      );
+
+      const currentDate = new Date(Date.now());
+      const compareDate = new Date(year, month - 1, day + 1);
+
+      return {
+        day,
+        available:
+          appointamentsInDay.length < 10 && isAfter(compareDate, currentDate),
+      };
+    });
+
+    return availability;
   }
 
   async create({
@@ -75,12 +133,18 @@ export class AppointmentsService implements IAppointmentsService {
   }: CreateAppointmentDto): Promise<Appointment> {
     const date = startOfHour(new Date(selectedDate));
 
-    const provider = await this.db.user.findFirst({
-      where: { id: providerId, role: 'PROVIDER' },
-    });
+    if (getHours(date) < 8 && getHours(date) > 17) {
+      throw new HttpException(
+        'You can only create appointment between 8am and 5pm',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-    if (!provider) {
-      throw new HttpException('Provider not found', HttpStatus.BAD_REQUEST);
+    if (isBefore(date, Date.now())) {
+      throw new HttpException(
+        "You can't create an appointment on a past date",
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const user = await this.userService.findBySub(userSub);
@@ -89,13 +153,28 @@ export class AppointmentsService implements IAppointmentsService {
       throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
     }
 
+    if (providerId === user.id) {
+      throw new HttpException(
+        "You can't create an appointment for yourself",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const provider = await this.db.user.findFirst({
+      where: { id: providerId, role: 'PROVIDER' },
+    });
+
+    if (!provider) {
+      throw new HttpException('Provider not found', HttpStatus.BAD_REQUEST);
+    }
+
     const isAlready = await this.db.appointment.findFirst({
       where: { date: date },
     });
 
     if (isAlready) {
       throw new HttpException(
-        'This appointment is already booked',
+        'This hour is already booked',
         HttpStatus.BAD_REQUEST,
       );
     }
